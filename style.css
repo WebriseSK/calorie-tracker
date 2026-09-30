@@ -219,3 +219,54 @@ button.primary {
 }
 
 .top > * { max-width: 688px; margin-left: auto; margin-right: auto; }
+
+/* Header language switch */
+.title-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+.title-row h1 { margin: 0; }
+.lang-switch { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.lang-switch .lang-btn { border: 0; background: none; padding: 5px 10px; font-weight: 700; font-size: .82rem; cursor: pointer; color: var(--muted); }
+.lang-btn.active { background: var(--accent); color: #fff; }
+.small-btn.lang-btn.active { border-color: var(--accent); }
+
+/* Describe what you ate */
+textarea {
+  width: 100%; font: inherit; color: inherit; resize: vertical;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+}
+textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.describe-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.describe-actions #describe-btn { flex: 1; min-width: 150px; }
+.describe-actions .small-btn { padding: 10px 12px; }
+button:disabled { opacity: .6; cursor: progress; }
+.ai-status { margin: 4px 0 0; font-size: .85rem; color: var(--accent); font-weight: 600; }
+.ai-status:empty { display: none; }
+
+.review { margin-top: 14px; border: 2px solid var(--accent); border-radius: 12px; padding: 12px; }
+.review h3 { margin: 0; font-size: 1rem; }
+.review .hint { margin: 2px 0 10px; }
+.review-row { border-bottom: 1px solid var(--border); padding: 8px 0; display: grid; gap: 6px; }
+.review-row.missing .r-kcal { border-color: var(--over); }
+.review-main { display: flex; gap: 6px; }
+.review-main .r-name { flex: 1; font-weight: 600; }
+.review-nums { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.review-nums .num { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: .9rem; }
+.review-nums input { width: 86px; padding: 6px 8px; }
+.review-row select { padding: 6px 8px; font-size: .85rem; width: 100%; }
+.src { font-size: .75rem; padding: 2px 8px; border-radius: 999px; background: var(--bg); color: var(--muted); font-weight: 600; }
+.src-ai, .src-off, .src-db, .src-mine { background: var(--accent-soft); color: var(--text); }
+.review-row.missing .src { background: transparent; color: var(--over); }
+.review-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.review-foot strong { font-size: 1.1rem; }
+
+.manual { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+.manual summary { cursor: pointer; font-weight: 600; color: var(--muted); margin-bottom: 10px; }
+
+.ai-form { display: grid; gap: 10px; margin-top: 12px; }
+.ai-form label { display: grid; gap: 4px; font-size: .88rem; color: var(--muted); }
+
+/* Barcode scanner */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+.modal[hidden] { display: none; }
+.modal-box { background: var(--card); border-radius: 14px; padding: 16px; width: 100%; max-width: 420px; display: grid; gap: 10px; text-align: center; }
+.modal-box p { margin: 0; font-weight: 600; }
+.modal-box video { width: 100%; border-radius: 10px; background: #000; aspect-ratio: 4 / 3; object-fit: cover; }

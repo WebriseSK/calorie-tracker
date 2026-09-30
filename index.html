@@ -9,11 +9,17 @@
 </head>
 <body>
   <header class="top">
-    <h1>🥗 Calorie Tracker</h1>
-    <nav class="tabs" role="tablist">
-      <button class="tab active" data-view="today">Day</button>
-      <button class="tab" data-view="history">History</button>
-      <button class="tab" data-view="settings">Settings</button>
+    <div class="title-row">
+      <h1>🥗 <span data-i18n="appTitle">Calorie Tracker</span></h1>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button class="lang-btn" data-lang="sk">SK</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" data-view="today" data-i18n="tabDay">Day</button>
+      <button class="tab" data-view="history" data-i18n="tabHistory">History</button>
+      <button class="tab" data-view="settings" data-i18n="tabSettings">Settings</button>
     </nav>
   </header>
 
@@ -21,10 +27,10 @@
     <!-- DAY VIEW -->
     <section id="view-today" class="view active">
       <div class="date-bar">
-        <button id="prev-day" class="icon-btn" aria-label="Previous day">‹</button>
+        <button id="prev-day" class="icon-btn" data-i18n-aria="prevDay">‹</button>
         <input type="date" id="date-input">
-        <button id="next-day" class="icon-btn" aria-label="Next day">›</button>
-        <button id="go-today" class="small-btn">Today</button>
+        <button id="next-day" class="icon-btn" data-i18n-aria="nextDay">›</button>
+        <button id="go-today" class="small-btn" data-i18n="today">Today</button>
       </div>
 
       <div class="card summary">
@@ -35,45 +41,75 @@
           </svg>
           <div class="ring-text">
             <div id="ring-main" class="ring-main">0</div>
-            <div id="ring-sub" class="ring-sub">kcal left</div>
+            <div id="ring-sub" class="ring-sub"></div>
           </div>
         </div>
         <div class="stats">
-          <div><span class="label">Goal</span><span id="stat-goal" class="value">0</span></div>
-          <div><span class="label">Eaten</span><span id="stat-eaten" class="value">0</span></div>
-          <div><span class="label">Remaining</span><span id="stat-left" class="value">0</span></div>
+          <div><span class="label" data-i18n="goal">Goal</span><span id="stat-goal" class="value">0</span></div>
+          <div><span class="label" data-i18n="eaten">Eaten</span><span id="stat-eaten" class="value">0</span></div>
+          <div><span class="label" data-i18n="remaining">Remaining</span><span id="stat-left" class="value">0</span></div>
         </div>
       </div>
 
       <div class="card">
-        <h2>Add food</h2>
-        <div class="search-wrap">
-          <input type="search" id="food-search" placeholder="Search foods (e.g. banana, egg, rice)…" autocomplete="off">
-          <ul id="search-results" class="search-results"></ul>
-        </div>
-        <form id="add-form" class="add-form">
-          <input type="text" id="f-name" placeholder="Food name" required>
-          <input type="number" id="f-kcal" placeholder="kcal" min="0" step="1" required>
-          <select id="f-meal">
-            <option value="breakfast">Breakfast</option>
-            <option value="lunch">Lunch</option>
-            <option value="dinner">Dinner</option>
-            <option value="snack">Snack</option>
+        <h2 data-i18n="describeTitle">What did you eat?</h2>
+        <textarea id="describe" rows="3" data-i18n-ph="describePlaceholder"></textarea>
+        <div class="describe-actions">
+          <select id="d-meal" data-i18n-aria="meal">
+            <option value="breakfast" data-i18n="breakfast">Breakfast</option>
+            <option value="lunch" data-i18n="lunch">Lunch</option>
+            <option value="dinner" data-i18n="dinner">Dinner</option>
+            <option value="snack" data-i18n="snack">Snacks</option>
           </select>
-          <button type="submit" class="primary">Add</button>
-        </form>
-        <p class="hint">Pick from search to auto-fill calories, or type your own food and calories.</p>
+          <button id="scan-btn" class="small-btn" type="button">📷 <span data-i18n="scanBtn">Scan barcode</span></button>
+          <button id="describe-btn" class="primary" type="button" data-i18n="describeBtn">Count calories</button>
+        </div>
+        <p class="hint" data-i18n="describeHint"></p>
+        <p id="ai-status" class="ai-status"></p>
+
+        <div id="review" class="review" hidden>
+          <h3 data-i18n="reviewTitle">Check and add</h3>
+          <p class="hint" data-i18n="reviewHint"></p>
+          <div id="review-list"></div>
+          <div class="review-foot">
+            <strong id="review-total"></strong>
+            <div class="row">
+              <button id="review-cancel" class="small-btn" type="button" data-i18n="cancel">Cancel</button>
+              <button id="review-add" class="primary" type="button" data-i18n="addAll">Add all</button>
+            </div>
+          </div>
+        </div>
+
+        <details class="manual">
+          <summary data-i18n="manualTitle">Search or add manually</summary>
+          <div class="search-wrap">
+            <input type="search" id="food-search" autocomplete="off" data-i18n-ph="searchPlaceholder">
+            <ul id="search-results" class="search-results"></ul>
+          </div>
+          <form id="add-form" class="add-form">
+            <input type="text" id="f-name" required data-i18n-ph="foodName">
+            <input type="number" id="f-kcal" placeholder="kcal" min="0" step="1" required>
+            <select id="f-meal">
+              <option value="breakfast" data-i18n="breakfast">Breakfast</option>
+              <option value="lunch" data-i18n="lunch">Lunch</option>
+              <option value="dinner" data-i18n="dinner">Dinner</option>
+              <option value="snack" data-i18n="snack">Snacks</option>
+            </select>
+            <button type="submit" class="primary" data-i18n="add">Add</button>
+          </form>
+          <p class="hint" data-i18n="manualHint"></p>
+        </details>
       </div>
 
       <div class="card">
-        <h2>Food log</h2>
+        <h2 data-i18n="logTitle">Food log</h2>
         <div id="log"></div>
       </div>
 
       <div class="card" id="reco-card">
         <div class="reco-head">
-          <h2>Easy food ideas</h2>
-          <button id="reco-shuffle" class="small-btn">Shuffle</button>
+          <h2 data-i18n="recoTitle">Easy food ideas</h2>
+          <button id="reco-shuffle" class="small-btn" data-i18n="shuffle">Shuffle</button>
         </div>
         <p id="reco-intro" class="hint"></p>
         <div id="reco-list" class="reco-list"></div>
@@ -84,19 +120,19 @@
     <section id="view-history" class="view">
       <div class="card">
         <div class="reco-head">
-          <h2>Last days</h2>
+          <h2 data-i18n="histTitle">Last days</h2>
           <select id="hist-range">
-            <option value="7">7 days</option>
-            <option value="14" selected>14 days</option>
-            <option value="30">30 days</option>
-            <option value="90">90 days</option>
+            <option value="7">7</option>
+            <option value="14" selected>14</option>
+            <option value="30">30</option>
+            <option value="90">90</option>
           </select>
         </div>
         <div id="chart" class="chart"></div>
         <div id="hist-stats" class="hist-stats"></div>
       </div>
       <div class="card">
-        <h2>All logged days</h2>
+        <h2 data-i18n="allDays">All logged days</h2>
         <div id="hist-list"></div>
       </div>
     </section>
@@ -104,58 +140,97 @@
     <!-- SETTINGS VIEW -->
     <section id="view-settings" class="view">
       <div class="card">
-        <h2>Daily calorie goal</h2>
+        <h2 data-i18n="goalTitle">Daily calorie goal</h2>
         <form id="goal-form" class="row">
           <input type="number" id="goal-input" min="800" max="6000" step="10" required>
-          <button type="submit" class="primary">Save goal</button>
+          <button type="submit" class="primary" data-i18n="saveGoal">Save goal</button>
         </form>
-        <p class="hint">Changing the goal applies to today and future days. Past days keep the goal they had.</p>
+        <p class="hint" data-i18n="goalHint"></p>
       </div>
 
       <div class="card">
-        <h2>Not sure? Estimate your goal</h2>
+        <h2 data-i18n="calcTitle">Not sure? Estimate your goal</h2>
         <form id="calc-form" class="calc">
-          <label>Sex
-            <select id="c-sex"><option value="m">Male</option><option value="f">Female</option></select>
+          <label><span data-i18n="sex">Sex</span>
+            <select id="c-sex"><option value="m" data-i18n="male">Male</option><option value="f" data-i18n="female">Female</option></select>
           </label>
-          <label>Age <input type="number" id="c-age" min="14" max="100" value="30" required></label>
-          <label>Weight (kg) <input type="number" id="c-weight" min="30" max="300" step="0.1" value="75" required></label>
-          <label>Height (cm) <input type="number" id="c-height" min="120" max="230" value="175" required></label>
-          <label>Activity
+          <label><span data-i18n="age">Age</span> <input type="number" id="c-age" min="14" max="100" value="30" required></label>
+          <label><span data-i18n="weight">Weight (kg)</span> <input type="number" id="c-weight" min="30" max="300" step="0.1" value="75" required></label>
+          <label><span data-i18n="height">Height (cm)</span> <input type="number" id="c-height" min="120" max="230" value="175" required></label>
+          <label><span data-i18n="activity">Activity</span>
             <select id="c-act">
-              <option value="1.2">Sedentary (desk job)</option>
-              <option value="1.375" selected>Light (1–3 workouts/week)</option>
-              <option value="1.55">Moderate (3–5/week)</option>
-              <option value="1.725">Very active (6–7/week)</option>
+              <option value="1.2" data-i18n="act1"></option>
+              <option value="1.375" selected data-i18n="act2"></option>
+              <option value="1.55" data-i18n="act3"></option>
+              <option value="1.725" data-i18n="act4"></option>
             </select>
           </label>
-          <label>Goal
+          <label><span data-i18n="aim">Goal</span>
             <select id="c-aim">
-              <option value="-500">Lose weight (~0.5 kg/week)</option>
-              <option value="0" selected>Maintain weight</option>
-              <option value="300">Gain weight slowly</option>
+              <option value="-500" data-i18n="aimLose"></option>
+              <option value="0" selected data-i18n="aimKeep"></option>
+              <option value="300" data-i18n="aimGain"></option>
             </select>
           </label>
-          <button type="submit" class="primary">Calculate</button>
+          <button type="submit" class="primary" data-i18n="calculate">Calculate</button>
         </form>
         <p id="calc-result" class="calc-result"></p>
       </div>
 
       <div class="card">
-        <h2>Backup your data</h2>
-        <p class="hint">Your log is saved in this browser on this device. Export a backup now and then, or to move your data to another device.</p>
+        <h2 data-i18n="aiTitle">Smarter calorie counting (optional)</h2>
+        <p class="hint" data-i18n="aiHint"></p>
+        <form id="ai-form" class="ai-form">
+          <label><span data-i18n="apiKey">Claude API key</span>
+            <input type="password" id="ai-key" placeholder="sk-ant-..." autocomplete="off">
+          </label>
+          <label><span data-i18n="model">Model</span>
+            <select id="ai-model">
+              <option value="claude-opus-5-5">Claude Opus 5.5</option>
+              <option value="claude-sonnet-5-5">Claude Sonnet 5.5</option>
+              <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
+            </select>
+          </label>
+          <div class="row">
+            <button type="submit" class="primary" data-i18n="saveKey">Save</button>
+            <button type="button" id="ai-remove" class="small-btn" data-i18n="removeKey">Remove key</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2 data-i18n="langTitle">Language</h2>
         <div class="row">
-          <button id="export-btn" class="small-btn">Export (.json)</button>
-          <label class="small-btn file-btn">Import (.json)<input type="file" id="import-file" accept="application/json,.json" hidden></label>
-          <button id="export-csv" class="small-btn">Export daily totals (.csv)</button>
+          <button class="small-btn lang-btn" data-lang="sk">Slovenčina</button>
+          <button class="small-btn lang-btn" data-lang="en">English</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 data-i18n="backupTitle">Backup your data</h2>
+        <p class="hint" data-i18n="backupHint"></p>
+        <div class="row">
+          <button id="export-btn" class="small-btn" data-i18n="exportJson">Export (.json)</button>
+          <label class="small-btn file-btn"><span data-i18n="importJson">Import (.json)</span><input type="file" id="import-file" accept="application/json,.json" hidden></label>
+          <button id="export-csv" class="small-btn" data-i18n="exportCsv">Export daily totals (.csv)</button>
         </div>
       </div>
     </section>
   </main>
 
+  <div id="scan-modal" class="modal" hidden>
+    <div class="modal-box">
+      <p data-i18n="scanTitle">Point the camera at the barcode</p>
+      <video id="scan-video" playsinline muted></video>
+      <button id="scan-close" class="small-btn" data-i18n="close">Close</button>
+    </div>
+  </div>
+
   <div id="toast" class="toast"></div>
 
+  <script src="i18n.js"></script>
   <script src="foods.js"></script>
+  <script src="lookup.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
