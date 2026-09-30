@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calorie Tracker</title>
+  <meta name="theme-color" content="#16a34a">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <h1>🥗 Calorie Tracker</h1>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-view="today">Day</button>
+      <button class="tab" data-view="history">History</button>
+      <button class="tab" data-view="settings">Settings</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- DAY VIEW -->
+    <section id="view-today" class="view active">
+      <div class="date-bar">
+        <button id="prev-day" class="icon-btn" aria-label="Previous day">‹</button>
+        <input type="date" id="date-input">
+        <button id="next-day" class="icon-btn" aria-label="Next day">›</button>
+        <button id="go-today" class="small-btn">Today</button>
+      </div>
+
+      <div class="card summary">
+        <div class="ring-wrap">
+          <svg viewBox="0 0 120 120" class="ring">
+            <circle cx="60" cy="60" r="52" class="ring-bg"/>
+            <circle cx="60" cy="60" r="52" class="ring-fg" id="ring-fg"/>
+          </svg>
+          <div class="ring-text">
+            <div id="ring-main" class="ring-main">0</div>
+            <div id="ring-sub" class="ring-sub">kcal left</div>
+          </div>
+        </div>
+        <div class="stats">
+          <div><span class="label">Goal</span><span id="stat-goal" class="value">0</span></div>
+          <div><span class="label">Eaten</span><span id="stat-eaten" class="value">0</span></div>
+          <div><span class="label">Remaining</span><span id="stat-left" class="value">0</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Add food</h2>
+        <div class="search-wrap">
+          <input type="search" id="food-search" placeholder="Search foods (e.g. banana, egg, rice)…" autocomplete="off">
+          <ul id="search-results" class="search-results"></ul>
+        </div>
+        <form id="add-form" class="add-form">
+          <input type="text" id="f-name" placeholder="Food name" required>
+          <input type="number" id="f-kcal" placeholder="kcal" min="0" step="1" required>
+          <select id="f-meal">
+            <option value="breakfast">Breakfast</option>
+            <option value="lunch">Lunch</option>
+            <option value="dinner">Dinner</option>
+            <option value="snack">Snack</option>
+          </select>
+          <button type="submit" class="primary">Add</button>
+        </form>
+        <p class="hint">Pick from search to auto-fill calories, or type your own food and calories.</p>
+      </div>
+
+      <div class="card">
+        <h2>Food log</h2>
+        <div id="log"></div>
+      </div>
+
+      <div class="card" id="reco-card">
+        <div class="reco-head">
+          <h2>Easy food ideas</h2>
+          <button id="reco-shuffle" class="small-btn">Shuffle</button>
+        </div>
+        <p id="reco-intro" class="hint"></p>
+        <div id="reco-list" class="reco-list"></div>
+      </div>
+    </section>
+
+    <!-- HISTORY VIEW -->
+    <section id="view-history" class="view">
+      <div class="card">
+        <div class="reco-head">
+          <h2>Last days</h2>
+          <select id="hist-range">
+            <option value="7">7 days</option>
+            <option value="14" selected>14 days</option>
+            <option value="30">30 days</option>
+            <option value="90">90 days</option>
+          </select>
+        </div>
+        <div id="chart" class="chart"></div>
+        <div id="hist-stats" class="hist-stats"></div>
+      </div>
+      <div class="card">
+        <h2>All logged days</h2>
+        <div id="hist-list"></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS VIEW -->
+    <section id="view-settings" class="view">
+      <div class="card">
+        <h2>Daily calorie goal</h2>
+        <form id="goal-form" class="row">
+          <input type="number" id="goal-input" min="800" max="6000" step="10" required>
+          <button type="submit" class="primary">Save goal</button>
+        </form>
+        <p class="hint">Changing the goal applies to today and future days. Past days keep the goal they had.</p>
+      </div>
+
+      <div class="card">
+        <h2>Not sure? Estimate your goal</h2>
+        <form id="calc-form" class="calc">
+          <label>Sex
+            <select id="c-sex"><option value="m">Male</option><option value="f">Female</option></select>
+          </label>
+          <label>Age <input type="number" id="c-age" min="14" max="100" value="30" required></label>
+          <label>Weight (kg) <input type="number" id="c-weight" min="30" max="300" step="0.1" value="75" required></label>
+          <label>Height (cm) <input type="number" id="c-height" min="120" max="230" value="175" required></label>
+          <label>Activity
+            <select id="c-act">
+              <option value="1.2">Sedentary (desk job)</option>
+              <option value="1.375" selected>Light (1–3 workouts/week)</option>
+              <option value="1.55">Moderate (3–5/week)</option>
+              <option value="1.725">Very active (6–7/week)</option>
+            </select>
+          </label>
+          <label>Goal
+            <select id="c-aim">
+              <option value="-500">Lose weight (~0.5 kg/week)</option>
+              <option value="0" selected>Maintain weight</option>
+              <option value="300">Gain weight slowly</option>
+            </select>
+          </label>
+          <button type="submit" class="primary">Calculate</button>
+        </form>
+        <p id="calc-result" class="calc-result"></p>
+      </div>
+
+      <div class="card">
+        <h2>Backup your data</h2>
+        <p class="hint">Your log is saved in this browser on this device. Export a backup now and then, or to move your data to another device.</p>
+        <div class="row">
+          <button id="export-btn" class="small-btn">Export (.json)</button>
+          <label class="small-btn file-btn">Import (.json)<input type="file" id="import-file" accept="application/json,.json" hidden></label>
+          <button id="export-csv" class="small-btn">Export daily totals (.csv)</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="foods.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
