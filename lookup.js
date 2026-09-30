@@ -1,5 +1,6 @@
 "use strict";
-// Turns a free-text food description (Slovak or English) into items with calories.
+// Turns a free-text food description (Slovak or English) into items with calories,
+// protein, carbs, fat and water.
 // Order of sources: your earlier entries -> built-in food list -> Open Food Facts
 // product database (branded products from Lidl, Billa, …). With a Claude API key
 // the whole description is sent to Claude instead.
@@ -10,7 +11,10 @@ function norm(s) {
 }
 
 // ---------- Parsing ----------
-const SEPARATORS = /\s*(?:,(?!\d)|;|\n|\+|\s(?:a|and|s|so|with|plus|aj|a aj|a tiez|a este)\s)\s*/i;
+// "and"-type separators always split; "with"-type ones only when the whole phrase isn't
+// a known food ("káva s mliekom" stays one item, "rožok s maslom" becomes two).
+const SEPARATORS = /\s*(?:,(?!\d)|;|\n|\+|\s(?:a|and|plus|aj|a aj|a tiez|a este)\s)\s*/i;
+const WITH_SEPARATOR = /\s+(?:s|so|with)\s+/i;
 
 const MEAL_WORDS = [
   ["breakfast", /\b(ranajk\w*|breakfast)\b/],
@@ -20,10 +24,15 @@ const MEAL_WORDS = [
 ];
 
 // Words that carry no food information. Normalized (no diacritics).
-const FILLER = new Set(("i had ate have eaten eat some of the my today for as a an at in " +
+const FILLER = new Set(("i had ate have eaten eat some of the my today for as a an at in with s so " +
   "jedol jedla zjedol zjedla som sme mal mala dal dala si sa dnes trochu na ku k " +
   "z zo from lidl lidla lidli lidlu billa billy bille kaufland kauflandu tesco tesca coop jednota jednoty dm obchodu " +
-  "ranajky ranajok obed obeda vecera veceru snack breakfast lunch dinner supper desiata desiatu olovrant").split(" "));
+  "ranajky ranajok obed obeda vecera veceru snack breakfast lunch dinner supper desiata desiatu olovrant " +
+  // containers and portion words: the amount is handled separately
+  "pohar pohare poharov poharik glass glasses salka salky salku cup cups hrncek hrnceky hrnceka mug " +
+  "flasa flasu flase flasky flasa bottle bottles plechovka plechovku plechovky can cans kelimok kelimky " +
+  "porcia porciu porcie portion portions tanier taniere plate plates miska misku bowl bowls " +
+  "balenie balenia pack packs packet kusok kusky slice slices").split(" "));
 
 const WORD_NUMBERS = {
   jeden: 1, jedna: 1, jedno: 1, jednu: 1, one: 1, a: 1, an: 1,
@@ -38,15 +47,35 @@ function parseDescription(text) {
   let meal = null;
   for (const [m, re] of MEAL_WORDS) if (re.test(n)) { meal = m; break; }
 
-  const parts = String(text).split(SEPARATORS).map((p) => p.trim()).filter(Boolean);
+  const parts = [];
+  for (const chunk of String(text).split(SEPARATORS).map((p) => p.trim()).filter(Boolean)) {
+    if (WITH_SEPARATOR.test(chunk)) {
+      const words = norm(chunk).split(/[^a-z0-9]+/).filter((w) => w && !FILLER.has(w) && !/^\d/.test(w) && !(w in WORD_NUMBERS));
+      const m = matchLocal(words);
+      if (!(m && m.all && m.cover === 1 && m.score > 0.95)) {
+        parts.push(...chunk.split(WITH_SEPARATOR).map((p) => p.trim()).filter(Boolean));
+        continue;
+      }
+    }
+    parts.push(chunk);
+  }
+
   const out = [];
   for (const raw of parts) {
     let s = norm(raw);
     let grams = null;
     let count = null;
 
+    // "pol litra", "half a litre", "liter"
+    const hm = s.match(/\b(pol|half(?: a)?)\s+(litra|liter|litre|l|kila|kg)\b/);
+    if (hm) { grams = 500; s = s.replace(hm[0], " "); }
+    else {
+      const lm = s.match(/(?:^|\s)(?:jeden\s+|one\s+|a\s+)?(liter|litra|litre|kilo|kila)\b/);
+      if (lm) { grams = 1000; s = s.replace(lm[0], " "); }
+    }
+
     const gm = s.match(/(\d+(?:[.,]\d+)?)\s*(kg|dkg|gramov|gramy|grams|gram|gr|g|ml|dl|litra|liter|litre|l)\b/);
-    if (gm) {
+    if (gm && grams == null) {
       grams = parseFloat(gm[1].replace(",", ".")) * UNIT_GRAMS[gm[2]];
       s = s.replace(gm[0], " ");
     }
@@ -84,6 +113,24 @@ function parseDescription(text) {
 // ---------- Local food list ----------
 function stem(w) { return w.length >= 5 ? w.slice(0, w.length - 2) : w; }
 
+// Nutrition values for `grams` of something with per-100 g values n100.
+function scaleNutrition(n100, grams) {
+  const k = grams / 100;
+  return {
+    kcal: Math.round(n100.kcal * k),
+    p: Math.round(n100.p * k * 10) / 10,
+    c: Math.round(n100.c * k * 10) / 10,
+    f: Math.round(n100.f * k * 10) / 10,
+  };
+}
+// Recalculate a review row after its grams changed.
+function applyGrams(row) {
+  if (!row.n100 || !(row.grams >= 0)) return row;
+  Object.assign(row, scaleNutrition(row.n100, row.grams));
+  if (row.isWater) row.water = Math.round(row.grams);
+  return row;
+}
+
 const splitWords = (s) => norm(s).split(/[^a-z0-9]+/).filter((w) => w.length >= 2);
 const FOOD_INDEX = FOODS.map((f) => ({
   food: f,
@@ -91,27 +138,33 @@ const FOOD_INDEX = FOODS.map((f) => ({
   names: [splitWords(f.name.en), splitWords(f.name.sk)],
 }));
 
-function wordMatches(q, w) {
-  if (q === w) return true;
-  if (q.length < 3 || w.length < 3) return false;
-  return w.startsWith(stem(q)) || q.startsWith(stem(w));
+// 1 = same word, 0.85 = same stem (Slovak endings: "rožky" ~ "rožok"), 0 = no match.
+function wordMatch(q, w) {
+  if (q === w) return 1;
+  if (q.length < 3 || w.length < 3) return 0;
+  return w.startsWith(stem(q)) || q.startsWith(stem(w)) ? 0.85 : 0;
 }
 
-// Returns { food, score } where score is the share of query words that matched.
+// Returns { food, score, all } where score is the weighted share of query words that
+// matched and `all` says whether every word matched.
 function matchLocal(tokens) {
   const useful = tokens.filter((t) => t.length >= 2 && !/^\d+$/.test(t));
   if (!useful.length) return null;
   let best = null;
   for (const entry of FOOD_INDEX) {
-    let hit = 0;
-    for (const q of useful) if (entry.words.some((w) => wordMatches(q, w))) hit++;
+    let sum = 0, hit = 0;
+    for (const q of useful) {
+      let m = 0;
+      for (const w of entry.words) { m = Math.max(m, wordMatch(q, w)); if (m === 1) break; }
+      if (m) { sum += m; hit++; }
+    }
     if (!hit) continue;
-    const score = hit / useful.length;
+    const score = sum / useful.length;
     // Tie-break: how much of the food's own name the description covers,
     // so "eggs" picks "Egg" rather than "Scrambled eggs".
-    const cover = Math.max(...entry.names.map((ws) => ws.length ? ws.filter((w) => useful.some((q) => wordMatches(q, w))).length / ws.length : 0));
-    if (!best || score > best.score || (score === best.score && cover > best.cover)) {
-      best = { food: entry.food, score, cover };
+    const cover = Math.max(...entry.names.map((ws) => ws.length ? ws.filter((w) => useful.some((q) => wordMatch(q, w))).length / ws.length : 0));
+    if (!best || score > best.score + 1e-9 || (Math.abs(score - best.score) < 1e-9 && cover > best.cover)) {
+      best = { food: entry.food, score, cover, all: hit === useful.length };
     }
   }
   return best && best.score >= 0.5 ? best : null;
@@ -134,18 +187,20 @@ async function fetchJSON(url, timeoutMs = 12000) {
 
 function offProduct(p) {
   const nut = p.nutriments || {};
-  let per100 = Number(nut["energy-kcal_100g"]);
-  if (!per100 && nut.energy_100g) per100 = Number(nut.energy_100g) / 4.184; // kJ -> kcal
-  if (!per100 || !isFinite(per100)) return null;
+  let per100 = nut["energy-kcal_100g"] != null ? Number(nut["energy-kcal_100g"])
+    : nut.energy_100g != null ? Number(nut.energy_100g) / 4.184 // kJ -> kcal
+    : NaN;
+  if (!isFinite(per100)) return null;
   const name = p.product_name_sk || p.product_name_cs || p.product_name || p.product_name_en || "";
   if (!name) return null;
   const brand = (p.brands || "").split(",")[0].trim();
+  const num = (v) => (isFinite(Number(v)) ? Number(v) : 0);
   const pack = Number(p.product_quantity) || null;
   const serving = Number(p.serving_quantity) || null;
   return {
     code: p.code,
     name: brand && !norm(name).includes(norm(brand)) ? `${name} (${brand})` : name,
-    per100: Math.round(per100),
+    n100: { kcal: Math.round(per100), p: num(nut.proteins_100g), c: num(nut.carbohydrates_100g), f: num(nut.fat_100g) },
     // Snacks are usually eaten as a whole pack, so prefer the pack weight when it's small.
     defaultGrams: pack && pack <= 150 ? pack : serving || pack || 100,
   };
@@ -184,8 +239,12 @@ const AI_SCHEMA = {
           name: { type: "string" },
           grams: { type: "number" },
           kcal: { type: "number" },
+          protein_g: { type: "number" },
+          carbs_g: { type: "number" },
+          fat_g: { type: "number" },
+          water_ml: { type: "number" },
         },
-        required: ["name", "grams", "kcal"],
+        required: ["name", "grams", "kcal", "protein_g", "carbs_g", "fat_g", "water_ml"],
         additionalProperties: false,
       },
     },
@@ -198,10 +257,11 @@ async function claudeEstimate(text, { apiKey, model, lang }) {
   const language = lang === "sk" ? "Slovak" : "English";
   const system = `You are a nutrition assistant inside a calorie tracking app used in Slovakia.
 The user describes what they ate, in Slovak or English. They may mention products from Slovak stores (Lidl, Billa, Kaufland, Tesco, COOP Jednota) and Slovak/Czech brands (e.g. Tatranka, Horalky, Kofola, Rajo, Pilos, Milbona, Figaro, Mäspoma).
-Split the description into individual foods and estimate for each the eaten amount in grams (or ml) and the calories.
+Split the description into individual foods and estimate for each the eaten amount in grams (or ml), calories, protein, carbohydrates and fat.
 - Use the amounts given. If none is given, assume one typical portion, or one whole package for packaged snacks and drinks.
 - For branded products use typical label values for that product.
 - Name each item briefly in ${language}, keeping any brand the user mentioned, e.g. "Rožok", "Tatranka (Lidl)".
+- water_ml is the amount of plain water, mineral water, unsweetened tea or black coffee in the item (0 for anything else).
 - Set meal only if the user says which meal it was, otherwise "unknown".`;
 
   const body = {
@@ -233,25 +293,31 @@ Split the description into individual foods and estimate for each the eaten amou
   const parsed = JSON.parse(block.text);
   return {
     meal: parsed.meal === "unknown" ? null : parsed.meal,
-    rows: parsed.items.filter((i) => i.name).map((i) => ({
-      name: i.name,
-      grams: i.grams > 0 ? Math.round(i.grams) : null,
-      per100: i.grams > 0 ? (i.kcal / i.grams) * 100 : null,
-      kcal: Math.round(i.kcal),
-      source: "ai",
-    })),
+    rows: parsed.items.filter((i) => i.name).map((i) => {
+      const g = i.grams > 0 ? i.grams : null;
+      const row = {
+        name: i.name,
+        grams: g ? Math.round(g) : null,
+        n100: g ? { kcal: (i.kcal / g) * 100, p: (i.protein_g / g) * 100, c: (i.carbs_g / g) * 100, f: (i.fat_g / g) * 100 } : null,
+        kcal: Math.round(i.kcal), p: i.protein_g, c: i.carbs_g, f: i.fat_g,
+        water: Math.round(i.water_ml || 0),
+        isWater: i.water_ml > 0 && g > 0 && Math.abs(i.water_ml - g) < 1,
+        source: "ai",
+      };
+      return row;
+    }),
   };
 }
 
 // ---------- Main entry ----------
-// customFoods: [{ name, kcal }] from the user's own earlier entries.
+// customFoods: [{ name, kcal, p, c, f, water }] from the user's own earlier entries.
 async function estimateFoods(text, { customFoods = [], lang = "en", apiKey = "", model = "", onAIError } = {}) {
   const trimmed = text.trim();
 
   // Just a barcode number
   if (/^\d{8,14}$/.test(trimmed)) {
     const p = await offBarcode(trimmed);
-    return { meal: null, rows: [p ? productRow(p, null, 1) : { name: trimmed, kcal: null, grams: null, per100: null, source: "none" }] };
+    return { meal: null, rows: [p ? productRow(p, null, 1) : emptyRow(trimmed, null)] };
   }
 
   if (apiKey) {
@@ -272,12 +338,13 @@ async function estimateFoods(text, { customFoods = [], lang = "en", apiKey = "",
     // 1. Something you logged before with exactly this name
     const mine = custom.get(norm(part.display)) || custom.get(part.query);
     if (mine && !part.grams) {
-      return { name: mine.name, kcal: Math.round(mine.kcal * count), grams: null, per100: null, source: "mine" };
+      const k = (v) => Math.round((v || 0) * count * 10) / 10;
+      return { name: count !== 1 ? `${count}× ${mine.name}` : mine.name, kcal: Math.round(mine.kcal * count), p: k(mine.p), c: k(mine.c), f: k(mine.f), water: Math.round((mine.water || 0) * count), grams: null, n100: null, source: "mine" };
     }
 
     // 2. Built-in food list (full match)
     const local = matchLocal(part.tokens);
-    if (local && local.score === 1) return localRow(local.food, part, lang);
+    if (local && local.all) return localRow(local.food, part, lang);
 
     // 3. Product database
     try {
@@ -291,27 +358,30 @@ async function estimateFoods(text, { customFoods = [], lang = "en", apiKey = "",
       }
     } catch (e) {
       if (local) return localRow(local.food, part, lang);
-      return { name: part.display, kcal: null, grams: part.grams, per100: null, source: "none", offError: true };
+      return { ...emptyRow(part.display, part.grams), offError: true };
     }
 
     // 4. Partial match in the food list
     if (local) return localRow(local.food, part, lang);
-    return { name: part.display, kcal: null, grams: part.grams, per100: null, source: "none" };
+    return emptyRow(part.display, part.grams);
   }));
 
   return { meal, rows };
 }
 
+function emptyRow(name, grams) {
+  return { name, kcal: null, p: 0, c: 0, f: 0, water: 0, grams, n100: null, source: "none" };
+}
+
 function localRow(food, part, lang) {
-  const per100 = (food.kcal / food.g) * 100;
   const grams = part.grams || food.g * (part.count || 1);
-  const name = part.grams ? `${food.name[lang]} (${Math.round(part.grams)} g)`
+  const name = part.grams ? `${food.name[lang]} (${Math.round(part.grams)} ${food.liquid ? "ml" : "g"})`
     : part.count && part.count !== 1 ? `${String(part.count).replace(".", lang === "sk" ? "," : ".")}× ${food.name[lang]}`
     : `${food.name[lang]} (${food.portion[lang]})`;
-  return { name, baseName: food.name[lang], kcal: Math.round((per100 * grams) / 100), grams: Math.round(grams), per100, source: "db" };
+  return applyGrams({ name, baseName: food.name[lang], grams: Math.round(grams), n100: food.per100, isWater: food.water, water: 0, source: "db", unit: food.liquid ? "ml" : "g" });
 }
 
 function productRow(p, grams, count) {
   const g = grams || p.defaultGrams * (count || 1);
-  return { name: p.name, kcal: Math.round((p.per100 * g) / 100), grams: Math.round(g), per100: p.per100, source: "off" };
+  return applyGrams({ name: p.name, grams: Math.round(g), n100: p.n100, water: 0, source: "off" });
 }

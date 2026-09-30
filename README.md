@@ -4,13 +4,17 @@ A simple web app to log your food and track daily calories. It's available in **
 
 ## Features
 
+- **Tracks calories, protein, carbs, fat and water.** Each day shows a calorie ring, bars for protein/carbs/fat, and a water bar with quick **+250 ml / +500 ml** buttons. Water, mineral water, tea and coffee you log also count toward water.
+- **About 290 built-in foods** with protein, carbs and fat: fruit, vegetables, dairy, bakery, meat, fish, nuts, sweets, drinks and Slovak meals (bryndzové halušky, kapustnica, rezeň…), plus brands you'd find at Lidl/Billa/Kaufland (Horalky, Tatranka, Mila, Kofola, Vinea, Pilos, Kinder, Milka, Snickers…). Anything else comes from Open Food Facts, which has millions of products.
+
 - **Describe what you ate**, in Slovak or English, e.g. `2 rožky s maslom a Tatranka z Lidla` or `200g chicken with rice, apple`. The app splits the text into foods, understands amounts (`2`, `pol`, `200 g`, `10 dkg`, `0,5 l`) and meal words (`na raňajky`, `for lunch`), and counts the calories. You review the result, adjust grams or calories if needed, and add everything at once.
 - **Store products (Lidl, Billa, Kaufland, Tesco…)**: anything not in the built-in list is looked up in the free [Open Food Facts](https://world.openfoodfacts.org) product database, with Slovak products first. You can pick a different product if the first match isn't right.
 - **Barcode**: tap *Scan barcode* to use your camera (Chrome on Android), or type the barcode number from the package into the box.
 - **Optional AI counting**: add a Claude API key in Settings. Claude then reads the whole description and estimates everything in it, even home-made meals. Without a key, everything above still works.
-- **Daily progress ring**, a food log grouped by meal, and **easy food ideas** that fit the calories you have left, with simple recipes.
-- **History**: every day is saved automatically. See a chart of the last 7/14/30/90 days, averages, and all logged days.
-- **Goal calculator** (Mifflin–St Jeor), plus **backup**: export/import JSON, or export daily totals as CSV.
+- **Goals**: a calorie goal plus protein/carbs/fat/water goals. These are calculated automatically from the calorie goal, set by hand, or filled in from your weight by the calculator.
+- A food log grouped by meal, and **easy food ideas** (30 simple recipes) that fit the calories you have left. When you're short on protein, it prefers protein-rich ideas.
+- **History**: every day is saved automatically. A chart of the last 7/14/30/90 days can show calories, protein, carbs, fat or water, with daily averages and a list of all logged days.
+- **Goal calculator** (Mifflin–St Jeor), plus **backup**: export/import JSON, or export daily totals (calories, protein, carbs, fat, water) as CSV.
 
 ## Running it
 

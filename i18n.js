@@ -1,6 +1,18 @@
 // UI translations. Add a key to both languages when adding text to the app.
 const I18N = {
   en: {
+    protein: "Protein", carbs: "Carbs", fat: "Fat", water: "Water", calories: "Calories",
+    pA: "P", cA: "C", fA: "F",
+    waterUndo: "Undo last water",
+    macroGoalsTitle: "Protein, carbs, fat & water goals",
+    macroAuto: "Calculate from my calorie goal (25% protein, 45% carbs, 30% fat)",
+    macroHint: "Protein, carbs and fat in grams per day. Water in ml per day. The calculator below also fills these in from your weight.",
+    waterGoalMl: "Water (ml)",
+    saveGoals: "Save goals",
+    goalsSaved: "Goals saved",
+    chartOf: "Show",
+    avgPerDay: "Average per logged day",
+    calcMacros: "Protein {p} g · Carbs {c} g · Fat {f} g · Water {w} l",
     appTitle: "Calorie Tracker",
     tabDay: "Day", tabHistory: "History", tabSettings: "Settings",
     today: "Today", yesterday: "Yesterday",
@@ -32,7 +44,7 @@ const I18N = {
     searchPlaceholder: "Search foods (e.g. banana, rožok, Horalky)…",
     foodName: "Food name",
     add: "Add",
-    manualHint: "Pick from search to fill in the calories, or type your own food and calories.",
+    manualHint: "Pick from search to fill in the values, or type your own food. Protein, carbs and fat are optional.",
     yourEntry: "your entry",
 
     breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snacks",
@@ -98,6 +110,18 @@ const I18N = {
   },
 
   sk: {
+    protein: "Bielkoviny", carbs: "Sacharidy", fat: "Tuky", water: "Voda", calories: "Kalórie",
+    pA: "B", cA: "S", fA: "T",
+    waterUndo: "Vrátiť poslednú vodu",
+    macroGoalsTitle: "Ciele pre bielkoviny, sacharidy, tuky a vodu",
+    macroAuto: "Vypočítať z kalorického cieľa (25 % bielkoviny, 45 % sacharidy, 30 % tuky)",
+    macroHint: "Bielkoviny, sacharidy a tuky v gramoch na deň. Voda v ml na deň. Kalkulačka nižšie ich vyplní aj podľa tvojej váhy.",
+    waterGoalMl: "Voda (ml)",
+    saveGoals: "Uložiť ciele",
+    goalsSaved: "Ciele uložené",
+    chartOf: "Zobraziť",
+    avgPerDay: "Priemer na zapísaný deň",
+    calcMacros: "Bielkoviny {p} g · Sacharidy {c} g · Tuky {f} g · Voda {w} l",
     appTitle: "Počítadlo kalórií",
     tabDay: "Deň", tabHistory: "História", tabSettings: "Nastavenia",
     today: "Dnes", yesterday: "Včera",
@@ -129,7 +153,7 @@ const I18N = {
     searchPlaceholder: "Hľadaj jedlo (napr. banán, rožok, Horalky)…",
     foodName: "Názov jedla",
     add: "Pridať",
-    manualHint: "Vyber z vyhľadávania a kalórie sa doplnia, alebo napíš vlastné jedlo a kalórie.",
+    manualHint: "Vyber z vyhľadávania a hodnoty sa doplnia, alebo napíš vlastné jedlo. Bielkoviny, sacharidy a tuky sú nepovinné.",
     yourEntry: "tvoj záznam",
 
     breakfast: "Raňajky", lunch: "Obed", dinner: "Večera", snack: "Desiata / olovrant",
